@@ -15,7 +15,7 @@ func TestConstraint(t *testing.T) {
 	}
 	gLeft := NewGuard(v1, GuardGreaterOrEqual)
 	gRight := NewGuard(v2, GuardLessThan)
-	c := NewConstraint(gLeft, ConstraintAnd, gRight)
+	c := NewConstraint(gLeft, ConstraintUnionAnd, gRight)
 
 	tests := []struct {
 		Name    string
