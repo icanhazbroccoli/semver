@@ -1,5 +1,11 @@
 package semver
 
+import (
+	"fmt"
+	"regexp"
+	"strings"
+)
+
 type ConstraintUnion uint8
 
 const (
@@ -20,7 +26,12 @@ const (
 	ConstraintOpCaret
 )
 
+const cvRegex string = `v?([0-9|x|X|\*]+)(\.[0-9|x|X|\*]+)?(\.[0-9|x|X|\*]+)?` +
+	`(-([0-9A-Za-z\-]+(\.[0-9A-Za-z\-]+)*))?` +
+	`(\+([0-9A-Za-z\-]+(\.[0-9A-Za-z\-]+)*))?`
+
 var constraintOps map[string]ConstraintOperator
+var constraintRegex *regexp.Regexp
 
 func init() {
 	constraintOps = map[string]ConstraintOperator{
@@ -37,6 +48,16 @@ func init() {
 		"~>": ConstraintOpTilde,
 		"^":  ConstraintOpCaret,
 	}
+
+	ops := make([]string, 0, len(constraintOps))
+	for k := range constraintOps {
+		ops = append(ops, regexp.QuoteMeta(k))
+	}
+
+	constraintRegex = regexp.MustCompile(fmt.Sprintf(
+		`^\s*(%s)\s*(%s)\s*$`,
+		strings.Join(ops, "|"),
+		cvRegex))
 }
 
 type Constraint struct {
@@ -47,12 +68,9 @@ type Constraint struct {
 
 var _ Checker = (*Constraint)(nil)
 
-func NewConstraint(left Checker, un ConstraintUnion, right Checker) *Constraint {
-	return &Constraint{
-		left:  left,
-		right: right,
-		un:    un,
-	}
+func NewConstraint(s string) (*Constraint, error) {
+	//TODO
+	return &Constraint{}, nil
 }
 
 func (c *Constraint) Check(v *Version) bool {

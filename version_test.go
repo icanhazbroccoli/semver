@@ -6,16 +6,10 @@ import (
 )
 
 func TestConstraint(t *testing.T) {
-	v1 := &Version{
-		base: (1 << 16) | (24 << 8) | 32,
-		pre:  "alpha.0",
+	c, err := NewConstraint(">=1.2.3, <=4.5.6")
+	if err != nil {
+		t.Fatal(err)
 	}
-	v2 := &Version{
-		base: 2 << 16,
-	}
-	gLeft := NewGuard(v1, GuardGreaterOrEqual)
-	gRight := NewGuard(v2, GuardLessThan)
-	c := NewConstraint(gLeft, ConstraintUnionAnd, gRight)
 
 	tests := []struct {
 		Name    string
