@@ -1,9 +1,9 @@
 package semver
 
 import (
+	"fmt"
 	"regexp"
 	"strconv"
-	"strings"
 )
 
 // taken from github.com/Masterminds/semver
@@ -36,31 +36,99 @@ type Version struct {
 	pre  string
 }
 
-func NewVersion(v string) (*Version, error) {
-	m := versionRegex.FindStringSubmatch(v)
-	if m == nil {
-		return nil, ErrInvalidSemVer
+func skipTrailing(s string, i int) int {
+	j := i
+	for j < len(s) {
+		if s[j] == ' ' || s[j] == 'v' {
+			j++
+			continue
+		}
+		break
 	}
+	return j
+}
+
+func readNum(s string, i int) (int, int) {
+	j := i
+	for j < len(s) && isNum(s[j]) {
+		j++
+	}
+	num, err := strconv.Atoi(s[i:j])
+	if err != nil {
+		return -1, -1
+	}
+	return num, j
+}
+
+func isNum(r byte) bool {
+	return r >= '0' && r <= '9'
+}
+
+func isAlpha(r byte) bool {
+	return (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z')
+}
+
+func isDot(r byte) bool {
+	return r == '.'
+}
+
+func isDash(r byte) bool {
+	return r == '-'
+}
+
+func readStr(s string, i int) (string, int) {
+	j := i
+	for j < len(s) && (isAlpha(s[j]) || isNum(s[j]) || isDot(s[j])) {
+		j++
+	}
+	return s[i:j], j
+}
+
+func NewVersion(s string) (*Version, error) {
+	var ds [3]int
+	var d int
+	var pre string
 	var base uint32
-	if v, err := strconv.Atoi(m[1]); err != nil {
-		return nil, err
-	} else {
-		base |= (uint32(v) & 0x3FF) << 20
+	var i int
+	dix := 0
+	i = skipTrailing(s, i)
+	maxi := len(s)
+	for i < maxi {
+		if isNum(s[i]) {
+			if dix >= len(ds) {
+				goto Err
+			}
+			d, i = readNum(s, i)
+			if i == -1 {
+				goto Err
+			}
+			ds[dix] = d
+			dix++
+			if i < maxi && isDot(s[i]) {
+				i++
+				continue
+			}
+			if i < maxi && isDash(s[i]) {
+				i++
+				pre, _ = readStr(s, i)
+				break
+			}
+		} else {
+			goto Err
+		}
 	}
-	if v, err := strconv.Atoi(strings.TrimPrefix(m[2], ".")); err != nil {
-		return nil, err
-	} else {
-		base |= (uint32(v) & 0x3FF) << 10
+
+	for j := 0; j < 3; j++ {
+		base |= (uint32(ds[j])) << uint(10*(2-j))
 	}
-	if v, err := strconv.Atoi(strings.TrimPrefix(m[3], ".")); err != nil {
-		return nil, err
-	} else {
-		base |= uint32(v) & 0x3FF
-	}
+
 	return &Version{
 		base: base,
-		pre:  m[5],
+		pre:  pre,
 	}, nil
+
+Err:
+	return nil, fmt.Errorf("failed to parse version: %q", s)
 }
 
 func (v Version) Major() uint32 {

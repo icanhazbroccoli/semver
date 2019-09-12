@@ -1,8 +1,13 @@
 package semver
 
 import (
+	"fmt"
+	"math/rand"
 	"reflect"
 	"testing"
+	"time"
+
+	masterminds "github.com/Masterminds/semver"
 )
 
 // 1-liner version initialization, returns nil on error
@@ -296,4 +301,60 @@ func TestCompact(t *testing.T) {
 			}
 		})
 	}
+}
+
+func BenchmarkCheck(b *testing.B) {
+	rand.Seed(time.Now().UTC().UnixNano())
+	oc, _ := masterminds.NewConstraint("^10.20.30")
+	nc := &Constraint{
+		left:  NewGuard(newVersionUnsafe("10.20.30"), GuardGreaterOrEqual),
+		right: NewGuard(newVersionUnsafe("11.0.0"), GuardLessThan),
+		un:    ConstraintUnionAnd,
+	}
+	nVersions := 10000000
+	type VerRes struct {
+		Ver string
+		Res bool
+	}
+	versions := make([]VerRes, 0, nVersions)
+	for i := 0; i < nVersions; i++ {
+		r := uint32(rand.Intn(0xFFFFFF))
+		ver := fmt.Sprintf(
+			"%d.%d.%d",
+			(r>>16)&0xFF,
+			(r>>8)&0xFF,
+			r&0xFF,
+		)
+		sv, err := masterminds.NewVersion(ver)
+		if err != nil {
+			b.Fatal(err)
+		}
+		versions = append(versions, VerRes{Ver: ver, Res: oc.Check(sv)})
+	}
+
+	b.Run("icanhazbroccoli", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			rv := versions[rand.Intn(len(versions))]
+			v, err := NewVersion(rv.Ver)
+			if err != nil {
+				b.Fatal(err)
+			}
+			if c := nc.Check(v); c != rv.Res {
+				b.Fatalf("icanhazbroccoli: mismatch for ver %s: got: %t, want: %t", rv.Ver, c, rv.Res)
+			}
+		}
+	})
+
+	b.Run("masterminds", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			rv := versions[rand.Intn(len(versions))]
+			v, err := masterminds.NewVersion(rv.Ver)
+			if err != nil {
+				b.Fatal(err)
+			}
+			if c := oc.Check(v); c != rv.Res {
+				b.Fatalf("masterminds: mismatch for ver %s: got: %t, want: %t", rv.Ver, c, rv.Res)
+			}
+		}
+	})
 }

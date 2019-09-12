@@ -135,7 +135,7 @@ func TestNewVersion(t *testing.T) {
 				return
 			}
 			if !reflect.DeepEqual(ver, &tt.ExpectVer) {
-				t.Fatalf("unexpected version: got: %+v, want: %+v", *ver, tt.ExpectVer)
+				t.Fatalf("unexpected version (%s): got: %+v, want: %+v", tt.Input, *ver, tt.ExpectVer)
 			}
 		})
 	}
