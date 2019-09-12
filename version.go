@@ -17,6 +17,20 @@ func init() {
 	versionRegex = regexp.MustCompile("^" + SemVerRegex + "$")
 }
 
+// base encodes 3 10-bit numbers of a SemVer version.
+// In binary format it looks like:
+// 0b00 XXXXXXXXXX XXXXXXXXXX XXXXXXXXXX
+//  |        |          |          |
+//  |        |          |          '---Patch version, 10 bits
+//  |        |          '---Minor version, 10 bits
+//  |        '---Major version, 10 bits
+//  '---Unused, 2 bits
+//
+// Therefore a max value for every number is 1023: the last version can't exceed
+// 1023.1023.1023
+//
+// pre contains the pre-release tag as a string and therefore has no upper
+// limitations.
 type Version struct {
 	base uint32
 	pre  string
@@ -31,17 +45,17 @@ func NewVersion(v string) (*Version, error) {
 	if v, err := strconv.Atoi(m[1]); err != nil {
 		return nil, err
 	} else {
-		base |= (uint32(v) & 0xFF) << 16
+		base |= (uint32(v) & 0x3FF) << 20
 	}
 	if v, err := strconv.Atoi(strings.TrimPrefix(m[2], ".")); err != nil {
 		return nil, err
 	} else {
-		base |= (uint32(v) & 0xFF) << 8
+		base |= (uint32(v) & 0x3FF) << 10
 	}
 	if v, err := strconv.Atoi(strings.TrimPrefix(m[3], ".")); err != nil {
 		return nil, err
 	} else {
-		base |= uint32(v) & 0xFF
+		base |= uint32(v) & 0x3FF
 	}
 	return &Version{
 		base: base,
@@ -50,15 +64,15 @@ func NewVersion(v string) (*Version, error) {
 }
 
 func (v Version) Major() uint32 {
-	return (v.base >> 16) & 0xFF
+	return (v.base >> 20) & 0x3FF
 }
 
 func (v Version) Minor() uint32 {
-	return (v.base >> 8) & 0xFF
+	return (v.base >> 10) & 0x3FF
 }
 
 func (v Version) Patch() uint32 {
-	return v.base & 0xFF
+	return v.base & 0x3FF
 }
 
 func (v Version) Pre() string {
@@ -67,37 +81,37 @@ func (v Version) Pre() string {
 
 func (v Version) NextMajor() Version {
 	return Version{
-		base: ((v.Major() + 1) & 0xFF) << 16,
+		base: ((v.Major() + 1) & 0x3FF) << 20,
 	}
 }
 
 func (v Version) PreMajor() Version {
 	return Version{
-		base: ((v.Major() - 1) & 0xFF) << 16,
+		base: ((v.Major() - 1) & 0x3FF) << 20,
 	}
 }
 
 func (v Version) NextMinor() Version {
 	return Version{
-		base: (v.Major() & 0xFF0000) | (((v.Minor() + 1) & 0xFF) << 8),
+		base: (v.Major() & 0x3FF00000) | (((v.Minor() + 1) & 0x3FF) << 10),
 	}
 }
 
 func (v Version) PrevMinor() Version {
 	return Version{
-		base: (v.base & 0xFF0000) | (((v.Minor() - 1) & 0xFF) << 8),
+		base: (v.base & 0x3FF00000) | (((v.Minor() - 1) & 0x3FF) << 10),
 	}
 }
 
 func (v Version) NextPatch() Version {
 	return Version{
-		base: (v.base & 0xFFFF00) | ((v.Patch() + 1) & 0xFF),
+		base: (v.base & 0x3FFFFC00) | ((v.Patch() + 1) & 0x3FF),
 	}
 }
 
 func (v Version) PrevPatch() Version {
 	return Version{
-		base: (v.base & 0xFFFF00) | ((v.Patch() - 1) & 0xFF),
+		base: (v.base & 0x3FFFFC00) | ((v.Patch() - 1) & 0x3FF),
 	}
 }
 

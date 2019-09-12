@@ -6,10 +6,17 @@ import (
 )
 
 func TestConstraint(t *testing.T) {
-	c, err := NewConstraint(">=1.2.3, <=4.5.6")
-	if err != nil {
-		t.Fatal(err)
+	//c, err := NewConstraint(">=1.24.32-alpha.0, <2.0.0")
+	v1, _ := NewVersion("1.24.32-alpha.0")
+	v2, _ := NewVersion("2.0.0")
+	c := &Constraint{
+		left:  NewGuard(v1, GuardGreaterOrEqual),
+		right: NewGuard(v2, GuardLessThan),
+		un:    ConstraintUnionAnd,
 	}
+	//if err != nil {
+	//	t.Fatal(err)
+	//}
 
 	tests := []struct {
 		Name    string
@@ -19,7 +26,7 @@ func TestConstraint(t *testing.T) {
 		{
 			Name: "1.24.32-alpha.0",
 			Version: &Version{
-				base: (1 << 16) | (24 << 8) | 32,
+				base: (1 << 20) | (24 << 10) | 32,
 				pre:  "alpha.0",
 			},
 			Expect: true,
@@ -27,7 +34,7 @@ func TestConstraint(t *testing.T) {
 		{
 			Name: "1.24.32-alpha.1",
 			Version: &Version{
-				base: (1 << 16) | (24 << 8) | 32,
+				base: (1 << 20) | (24 << 10) | 32,
 				pre:  "alpha.1",
 			},
 			Expect: true,
@@ -35,14 +42,14 @@ func TestConstraint(t *testing.T) {
 		{
 			Name: "1.24.32",
 			Version: &Version{
-				base: (1 << 16) | (24 << 8) | 32,
+				base: (1 << 20) | (24 << 10) | 32,
 			},
 			Expect: true,
 		},
 		{
 			Name: "1.24.31-alpha.0",
 			Version: &Version{
-				base: (1 << 16) | (24 << 8) | 31,
+				base: (1 << 20) | (24 << 10) | 31,
 				pre:  "alpha.0",
 			},
 			Expect: false,
@@ -50,7 +57,7 @@ func TestConstraint(t *testing.T) {
 		{
 			Name: "1.23.32-alpha.0",
 			Version: &Version{
-				base: (1 << 16) | (23 << 8) | 32,
+				base: (1 << 20) | (23 << 10) | 32,
 				pre:  "alpha.0",
 			},
 			Expect: false,
@@ -58,7 +65,7 @@ func TestConstraint(t *testing.T) {
 		{
 			Name: "0.24.32-alpha.0",
 			Version: &Version{
-				base: (0 << 16) | (24 << 8) | 32,
+				base: (0 << 20) | (24 << 10) | 32,
 				pre:  "alpha.0",
 			},
 			Expect: false,
@@ -66,7 +73,7 @@ func TestConstraint(t *testing.T) {
 		{
 			Name: "2.0.0",
 			Version: &Version{
-				base: 2 << 16,
+				base: 2 << 20,
 			},
 			Expect: false,
 		},
@@ -90,7 +97,7 @@ func TestNewVersion(t *testing.T) {
 		{
 			Input: "1.2.3-beta.2",
 			ExpectVer: Version{
-				base: (1 << 16) | (2 << 8) | (3),
+				base: (1 << 20) | (2 << 10) | (3),
 				pre:  "beta.2",
 			},
 		},
@@ -107,13 +114,13 @@ func TestNewVersion(t *testing.T) {
 		{
 			Input: "0.1.0",
 			ExpectVer: Version{
-				base: (1 << 8),
+				base: (1 << 10),
 			},
 		},
 		{
 			Input: "1.0.0",
 			ExpectVer: Version{
-				base: (1 << 16),
+				base: (1 << 20),
 			},
 		},
 	}
