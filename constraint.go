@@ -82,23 +82,42 @@ type Constraint struct {
 var _ Checker = (*Constraint)(nil)
 
 func NewConstraint(s string) (*Constraint, error) {
-	//ors := make([]*Constraint, 0, 1)
-	//for _, or := range strings.Split(s, "||") {
-	//	if !validConstraintRegex.MatchString(or) {
-	//		return nil, fmt.Errorf("improper constraint: %s", or)
-	//	}
-	//	cs := findConstraintRegex.FindAllString(or, -1)
-	//	ands := make([]*Constraint, 0, 1)
-	//	for _, c := range cs {
-	//		//and, err := parseConstraint(c)
-	//		//if err != nil {
-	//		//	return nil, err
-	//		//}
-	//		//ands = append(ands, and)
-	//	}
-	//}
-	//fmt.Println(ors)
-	return &Constraint{}, nil
+	ors := strings.Split(s, "||")
+	orConstr := make([]*Constraint, 0, len(ors))
+	for _, or := range ors {
+		ands := strings.Split(or, ",")
+		andConstr := make([]*Constraint, 0, len(ands))
+		for _, and := range ands {
+			c, err := parseConstraint(and)
+			if err != nil {
+				return nil, err
+			}
+			andConstr = append(andConstr, c)
+		}
+		orConstr = append(orConstr, compact(andConstr, ConstraintUnionAnd))
+	}
+	return compact(orConstr, ConstraintUnionOr), nil
+}
+
+func compact(cs []*Constraint, un ConstraintUnion) *Constraint {
+	if len(cs) == 0 {
+		return nil
+	}
+	ix := len(cs) - 1
+	ptr := cs[ix]
+	for ix > 0 {
+		ix--
+		ptr = &Constraint{
+			left:  cs[ix],
+			right: ptr,
+			un:    un,
+		}
+	}
+	return ptr
+}
+
+func parseConstraint(s string) (*Constraint, error) {
+	return nil, fmt.Errorf("not implemented")
 }
 
 func (c *Constraint) Check(v *Version) bool {
