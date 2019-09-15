@@ -74,6 +74,11 @@ func parseConstraint(s string) (*Constraint, error) {
 		}
 	}
 
+	// Unset numbers are equivalent to wildcards
+	if w := uint8(3 - len(ds)); w > wcds {
+		wcds = w
+	}
+
 	left, right, un = guardGens[op](ds, wcds, pre)
 
 	return &Constraint{left: left, right: right, un: un}, nil

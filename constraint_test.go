@@ -423,6 +423,62 @@ func TestParseConstraint(t *testing.T) {
 				un:    ConstraintUnionOr,
 			},
 		},
+		{
+			Input: "!=1.2.3-beta.0",
+			ExpectConstr: &Constraint{
+				left: NewGuard(
+					NewVersionRaw([]uint32{1, 2, 3}, "beta.0"),
+					GuardLessThan,
+				),
+				right: NewGuard(
+					NewVersionRaw([]uint32{1, 2, 3}, "beta.0"),
+					GuardGreaterThan,
+				),
+				un: ConstraintUnionOr,
+			},
+		},
+		{
+			Input: "!=1.2.*",
+			ExpectConstr: &Constraint{
+				left: NewGuard(
+					NewVersionRaw([]uint32{1, 2, 0}, ""),
+					GuardLessThan,
+				),
+				right: NewGuard(
+					NewVersionRaw([]uint32{1, 3, 0}, ""),
+					GuardGreaterThan,
+				),
+				un: ConstraintUnionOr,
+			},
+		},
+		{
+			Input: "!=1.2",
+			ExpectConstr: &Constraint{
+				left: NewGuard(
+					NewVersionRaw([]uint32{1, 2, 0}, ""),
+					GuardLessThan,
+				),
+				right: NewGuard(
+					NewVersionRaw([]uint32{1, 3, 0}, ""),
+					GuardGreaterThan,
+				),
+				un: ConstraintUnionOr,
+			},
+		},
+		{
+			Input: "!=1",
+			ExpectConstr: &Constraint{
+				left: NewGuard(
+					NewVersionRaw([]uint32{1, 0, 0}, ""),
+					GuardLessThan,
+				),
+				right: NewGuard(
+					NewVersionRaw([]uint32{2, 0, 0}, ""),
+					GuardGreaterThan,
+				),
+				un: ConstraintUnionOr,
+			},
+		},
 	}
 
 	for _, tt := range tests {
