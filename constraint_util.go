@@ -41,7 +41,7 @@ func parseConstraint(s string) (*Constraint, error) {
 	var err error
 
 	i, maxi := 0, len(s)
-	var ds [3]uint32
+	ds := make([]uint32, 0, 3)
 	var wcds uint8
 	var d, dix int
 	i = skipTrailing(s, i)
@@ -54,22 +54,23 @@ func parseConstraint(s string) (*Constraint, error) {
 	i = skipTrailing(s, i)
 	for i < maxi {
 		if isNum(s[i]) {
-			if dix >= len(ds) {
+			if dix >= 3 {
 				goto Err
 			}
 			d, i = readNum(s, i)
 			if i == -1 {
 				goto Err
 			}
-			ds[dix] = uint32(d)
+			ds = append(ds, uint32(d))
 			dix++
 		} else if isStar(s[i]) {
-			if dix >= len(ds) {
+			if dix >= 3 {
 				goto Err
 			}
-			if w := uint8((1 << uint(len(ds)-1-dix))); w > wcds { // the most significant wildcard beats the rest
+			if w := uint8((1 << uint(2-dix))); w > wcds { // the most significant wildcard beats the rest
 				wcds = w
 			}
+			ds = append(ds, 0)
 			i++
 			dix++
 		} else {
@@ -118,8 +119,8 @@ func compact(cs []*Constraint, un ConstraintUnion) *Constraint {
 	return ptr
 }
 
-func expandRange(ds [3]uint32, wcds uint8, pre string) (*Version, *Version) {
-	v := NewVersionRaw(ds[0], ds[1], ds[2], pre)
+func expandRange(ds []uint32, wcds uint8, pre string) (*Version, *Version) {
+	v := NewVersionRaw(ds, pre)
 	switch wcds {
 	case uint8(0):
 		return v, v
@@ -132,9 +133,9 @@ func expandRange(ds [3]uint32, wcds uint8, pre string) (*Version, *Version) {
 	}
 }
 
-type guardGen func([3]uint32, uint8, string) (*Guard, *Guard, ConstraintUnion, error)
+type guardGen func([]uint32, uint8, string) (*Guard, *Guard, ConstraintUnion, error)
 
-func genGuards(op ConstraintOperator, ds [3]uint32, wcds uint8, pre string) (*Guard, *Guard, ConstraintUnion, error) {
+func genGuards(op ConstraintOperator, ds []uint32, wcds uint8, pre string) (*Guard, *Guard, ConstraintUnion, error) {
 	var gen guardGen
 	switch op {
 	case ConstraintOpTildeOrEqual:
@@ -145,16 +146,44 @@ func genGuards(op ConstraintOperator, ds [3]uint32, wcds uint8, pre string) (*Gu
 	return gen(ds, wcds, pre)
 }
 
-func genGuardNotEqual(ds [3]uint32, wcds uint8, pre string) (*Guard, *Guard, ConstraintUnion, error) {
+func genGuardNotEqual(ds []uint32, wcds uint8, pre string) (*Guard, *Guard, ConstraintUnion, error) {
 	v1, v2 := expandRange(ds, wcds, pre)
 	return NewGuard(v1, GuardLessThan), NewGuard(v2, GuardGreaterThan), ConstraintUnionOr, nil
 }
 
-func genGuardTildeOrEqual(ds [3]uint32, wcds uint8, pre string) (*Guard, *Guard, ConstraintUnion, error) {
+func genGuardTildeOrEqual(ds []uint32, wcds uint8, pre string) (*Guard, *Guard, ConstraintUnion, error) {
 	v1, v2 := expandRange(ds, wcds, pre)
-	leftOp, rightOp := GuardGreaterOrEqual, GuardLessThan
 	if v1 == v2 {
-		rightOp = GuardLessOrEqual
+		return NewGuard(v1, GuardEqual), nil, ConstraintUnionOr, nil
 	}
-	return NewGuard(v1, leftOp), NewGuard(v2, rightOp), ConstraintUnionAnd, nil
+	return NewGuard(v1, GuardGreaterOrEqual), NewGuard(v2, GuardLessThan), ConstraintUnionAnd, nil
 }
+
+func genGuardGreaterThan(ds []uint32, wcds uint8, pre string) (*Guard, *Guard, ConstraintUnion, error) {
+	_, v2 := expandRange(ds, wcds, pre)
+	return NewGuard(v2, GuardGreaterThan), nil, ConstraintUnionOr, nil
+}
+
+func genGuardGreaterOrEqual(ds []uint32, wcds uint8, pre string) (*Guard, *Guard, ConstraintUnion, error) {
+	_, v2 := expandRange(ds, wcds, pre)
+	return NewGuard(v2, GuardGreaterOrEqual), nil, ConstraintUnionOr, nil
+}
+
+func genGuardLessThan(ds []uint32, wcds uint8, pre string) (*Guard, *Guard, ConstraintUnion, error) {
+	v1, _ := expandRange(ds, wcds, pre)
+	return NewGuard(v1, GuardLessThan), nil, ConstraintUnionOr, nil
+}
+
+func genGuardLessOrEqual(ds []uint32, wcds uint8, pre string) (*Guard, *Guard, ConstraintUnion, error) {
+	v1, _ := expandRange(ds, wcds, pre)
+	return NewGuard(v1, GuardLessOrEqual), nil, ConstraintUnionOr, nil
+}
+
+func genGuardTilde(ds []uint32, wcds uint8, pre string) (*Guard, *Guard, ConstraintUnion, error) {
+	v1, v2 := expandRange(ds, wcds, pre)
+	return NewGuard(v1, GuardGreaterOrEqual), NewGuard(v2, GuardLessThan), ConstraintUnionAnd, nil
+}
+
+//func genGuardCaret(ds [3]uint32), wcds uint8, pre string) (*Guard, *Guard, ConstraintUnion, error) {
+//
+//}

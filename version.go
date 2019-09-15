@@ -32,11 +32,15 @@ func NewVersion(s string) (*Version, error) {
 	}, nil
 }
 
-func NewVersionRaw(d0, d1, d2 uint32, pre string) *Version {
-	return &Version{
-		base: (d0 << 20) | (d1 << 10) | d2,
-		pre:  pre,
+func NewVersionRaw(ds []uint32, pre string) *Version {
+	var base uint32
+	for i, d := range ds {
+		if i > 3 {
+			break
+		}
+		base |= d << uint((2-i)*10)
 	}
+	return &Version{base: base, pre: pre}
 }
 
 func (v Version) Major() uint32 {

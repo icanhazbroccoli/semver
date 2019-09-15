@@ -313,25 +313,22 @@ func TestParseConstraint(t *testing.T) {
 			Input: "1.2.3",
 			ExpectConstr: &Constraint{
 				left: NewGuard(
-					NewVersionRaw(1, 2, 3, ""),
-					GuardGreaterOrEqual,
+					NewVersionRaw([]uint32{1, 2, 3}, ""),
+					GuardEqual,
 				),
-				right: NewGuard(
-					NewVersionRaw(1, 2, 3, ""),
-					GuardLessOrEqual,
-				),
-				un: ConstraintUnionAnd,
+				right: (*Guard)(nil),
+				un:    ConstraintUnionOr,
 			},
 		},
 		{
 			Input: "1.2.*",
 			ExpectConstr: &Constraint{
 				left: NewGuard(
-					NewVersionRaw(1, 2, 0, ""),
+					NewVersionRaw([]uint32{1, 2, 0}, ""),
 					GuardGreaterOrEqual,
 				),
 				right: NewGuard(
-					NewVersionRaw(1, 3, 0, ""),
+					NewVersionRaw([]uint32{1, 3, 0}, ""),
 					GuardLessThan,
 				),
 				un: ConstraintUnionAnd,
@@ -341,11 +338,11 @@ func TestParseConstraint(t *testing.T) {
 			Input: "1.*",
 			ExpectConstr: &Constraint{
 				left: NewGuard(
-					NewVersionRaw(1, 0, 0, ""),
+					NewVersionRaw([]uint32{1, 0, 0}, ""),
 					GuardGreaterOrEqual,
 				),
 				right: NewGuard(
-					NewVersionRaw(2, 0, 0, ""),
+					NewVersionRaw([]uint32{2, 0, 0}, ""),
 					GuardLessThan,
 				),
 				un: ConstraintUnionAnd,
@@ -355,7 +352,7 @@ func TestParseConstraint(t *testing.T) {
 			Input: "*",
 			ExpectConstr: &Constraint{
 				left: NewGuard(
-					NewVersionRaw(0, 0, 0, ""),
+					NewVersionRaw([]uint32{0, 0, 0}, ""),
 					GuardGreaterOrEqual,
 				),
 				right: NewGuard(
@@ -369,7 +366,7 @@ func TestParseConstraint(t *testing.T) {
 			Input: "*.*",
 			ExpectConstr: &Constraint{
 				left: NewGuard(
-					NewVersionRaw(0, 0, 0, ""),
+					NewVersionRaw([]uint32{0, 0, 0}, ""),
 					GuardGreaterOrEqual,
 				),
 				right: NewGuard(
@@ -383,7 +380,7 @@ func TestParseConstraint(t *testing.T) {
 			Input: "*.*.*",
 			ExpectConstr: &Constraint{
 				left: NewGuard(
-					NewVersionRaw(0, 0, 0, ""),
+					NewVersionRaw([]uint32{0, 0, 0}, ""),
 					GuardGreaterOrEqual,
 				),
 				right: NewGuard(
@@ -397,42 +394,33 @@ func TestParseConstraint(t *testing.T) {
 			Input: "=1.2.3-beta.0",
 			ExpectConstr: &Constraint{
 				left: NewGuard(
-					NewVersionRaw(1, 2, 3, "beta.0"),
-					GuardGreaterOrEqual,
+					NewVersionRaw([]uint32{1, 2, 3}, "beta.0"),
+					GuardEqual,
 				),
-				right: NewGuard(
-					NewVersionRaw(1, 2, 3, "beta.0"),
-					GuardLessOrEqual,
-				),
-				un: ConstraintUnionAnd,
+				right: (*Guard)(nil),
+				un:    ConstraintUnionOr,
 			},
 		},
 		{
 			Input: "=v1.2.3-beta.0",
 			ExpectConstr: &Constraint{
 				left: NewGuard(
-					NewVersionRaw(1, 2, 3, "beta.0"),
-					GuardGreaterOrEqual,
+					NewVersionRaw([]uint32{1, 2, 3}, "beta.0"),
+					GuardEqual,
 				),
-				right: NewGuard(
-					NewVersionRaw(1, 2, 3, "beta.0"),
-					GuardLessOrEqual,
-				),
-				un: ConstraintUnionAnd,
+				right: (*Guard)(nil),
+				un:    ConstraintUnionOr,
 			},
 		},
 		{
 			Input: "= v1.2.3-beta.0",
 			ExpectConstr: &Constraint{
 				left: NewGuard(
-					NewVersionRaw(1, 2, 3, "beta.0"),
-					GuardGreaterOrEqual,
+					NewVersionRaw([]uint32{1, 2, 3}, "beta.0"),
+					GuardEqual,
 				),
-				right: NewGuard(
-					NewVersionRaw(1, 2, 3, "beta.0"),
-					GuardLessOrEqual,
-				),
-				un: ConstraintUnionAnd,
+				right: (*Guard)(nil),
+				un:    ConstraintUnionOr,
 			},
 		},
 	}
