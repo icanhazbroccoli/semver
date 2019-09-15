@@ -38,7 +38,6 @@ func parseConstraint(s string) (*Constraint, error) {
 	var c *Constraint
 	var left, right *Guard
 	var un ConstraintUnion
-	var err error
 
 	i, maxi := 0, len(s)
 	ds := make([]uint32, 0, 3)
@@ -87,10 +86,7 @@ func parseConstraint(s string) (*Constraint, error) {
 		}
 	}
 
-	left, right, un, err = genGuards(constraintOps[op], ds, wcds, pre)
-	if err != nil {
-		return nil, err
-	}
+	left, right, un = genGuards(constraintOps[op], ds, wcds, pre)
 
 	c = &Constraint{
 		left:  left,
@@ -133,9 +129,9 @@ func expandRange(ds []uint32, wcds uint8, pre string) (*Version, *Version) {
 	}
 }
 
-type guardGen func([]uint32, uint8, string) (*Guard, *Guard, ConstraintUnion, error)
+type guardGen func([]uint32, uint8, string) (*Guard, *Guard, ConstraintUnion)
 
-func genGuards(op ConstraintOperator, ds []uint32, wcds uint8, pre string) (*Guard, *Guard, ConstraintUnion, error) {
+func genGuards(op ConstraintOperator, ds []uint32, wcds uint8, pre string) (*Guard, *Guard, ConstraintUnion) {
 	var gen guardGen
 	switch op {
 	case ConstraintOpTildeOrEqual:
@@ -146,44 +142,61 @@ func genGuards(op ConstraintOperator, ds []uint32, wcds uint8, pre string) (*Gua
 	return gen(ds, wcds, pre)
 }
 
-func genGuardNotEqual(ds []uint32, wcds uint8, pre string) (*Guard, *Guard, ConstraintUnion, error) {
+func genGuardNotEqual(ds []uint32, wcds uint8, pre string) (*Guard, *Guard, ConstraintUnion) {
 	v1, v2 := expandRange(ds, wcds, pre)
-	return NewGuard(v1, GuardLessThan), NewGuard(v2, GuardGreaterThan), ConstraintUnionOr, nil
+	return NewGuard(v1, GuardLessThan), NewGuard(v2, GuardGreaterThan), ConstraintUnionOr
 }
 
-func genGuardTildeOrEqual(ds []uint32, wcds uint8, pre string) (*Guard, *Guard, ConstraintUnion, error) {
+func genGuardTildeOrEqual(ds []uint32, wcds uint8, pre string) (*Guard, *Guard, ConstraintUnion) {
 	v1, v2 := expandRange(ds, wcds, pre)
 	if v1 == v2 {
-		return NewGuard(v1, GuardEqual), nil, ConstraintUnionOr, nil
+		return NewGuard(v1, GuardEqual), nil, ConstraintUnionOr
 	}
-	return NewGuard(v1, GuardGreaterOrEqual), NewGuard(v2, GuardLessThan), ConstraintUnionAnd, nil
+	return NewGuard(v1, GuardGreaterOrEqual), NewGuard(v2, GuardLessThan), ConstraintUnionAnd
 }
 
-func genGuardGreaterThan(ds []uint32, wcds uint8, pre string) (*Guard, *Guard, ConstraintUnion, error) {
+func genGuardGreaterThan(ds []uint32, wcds uint8, pre string) (*Guard, *Guard, ConstraintUnion) {
 	_, v2 := expandRange(ds, wcds, pre)
-	return NewGuard(v2, GuardGreaterThan), nil, ConstraintUnionOr, nil
+	return NewGuard(v2, GuardGreaterThan), nil, ConstraintUnionOr
 }
 
-func genGuardGreaterOrEqual(ds []uint32, wcds uint8, pre string) (*Guard, *Guard, ConstraintUnion, error) {
+func genGuardGreaterOrEqual(ds []uint32, wcds uint8, pre string) (*Guard, *Guard, ConstraintUnion) {
 	_, v2 := expandRange(ds, wcds, pre)
-	return NewGuard(v2, GuardGreaterOrEqual), nil, ConstraintUnionOr, nil
+	return NewGuard(v2, GuardGreaterOrEqual), nil, ConstraintUnionOr
 }
 
-func genGuardLessThan(ds []uint32, wcds uint8, pre string) (*Guard, *Guard, ConstraintUnion, error) {
+func genGuardLessThan(ds []uint32, wcds uint8, pre string) (*Guard, *Guard, ConstraintUnion) {
 	v1, _ := expandRange(ds, wcds, pre)
-	return NewGuard(v1, GuardLessThan), nil, ConstraintUnionOr, nil
+	return NewGuard(v1, GuardLessThan), nil, ConstraintUnionOr
 }
 
-func genGuardLessOrEqual(ds []uint32, wcds uint8, pre string) (*Guard, *Guard, ConstraintUnion, error) {
+func genGuardLessOrEqual(ds []uint32, wcds uint8, pre string) (*Guard, *Guard, ConstraintUnion) {
 	v1, _ := expandRange(ds, wcds, pre)
-	return NewGuard(v1, GuardLessOrEqual), nil, ConstraintUnionOr, nil
+	return NewGuard(v1, GuardLessOrEqual), nil, ConstraintUnionOr
 }
 
-func genGuardTilde(ds []uint32, wcds uint8, pre string) (*Guard, *Guard, ConstraintUnion, error) {
+func genGuardTilde(ds []uint32, wcds uint8, pre string) (*Guard, *Guard, ConstraintUnion) {
 	v1, v2 := expandRange(ds, wcds, pre)
-	return NewGuard(v1, GuardGreaterOrEqual), NewGuard(v2, GuardLessThan), ConstraintUnionAnd, nil
+	return NewGuard(v1, GuardGreaterOrEqual), NewGuard(v2, GuardLessThan), ConstraintUnionAnd
 }
 
-//func genGuardCaret(ds [3]uint32), wcds uint8, pre string) (*Guard, *Guard, ConstraintUnion, error) {
-//
-//}
+func genGuardCaret(ds []uint32, wcds uint8, pre string) (*Guard, *Guard, ConstraintUnion) {
+	var v1, v2 *Version
+	v1 = NewVersionRaw(ds, pre)
+	if wcds >= 4 { // >= 0b100
+		v2 = &Version{base: 0x3FFFFFFF + 1}
+	} else if v1.Major() > 0 {
+		v2 = v1.NextMajor()
+	} else {
+		switch len(ds) {
+		case 3:
+			v2 = v1.NextPatch()
+		case 2:
+			v2 = v1.NextMinor()
+		default:
+			v2 = v1.NextMajor()
+		}
+	}
+
+	return NewGuard(v1, GuardGreaterOrEqual), NewGuard(v2, GuardLessThan), ConstraintUnionAnd
+}
