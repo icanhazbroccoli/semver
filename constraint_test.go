@@ -303,6 +303,156 @@ func TestCompact(t *testing.T) {
 	}
 }
 
+func TestParseConstraint(t *testing.T) {
+	tests := []struct {
+		Input        string
+		ExpectConstr *Constraint
+		ExpectErr    error
+	}{
+		{
+			Input: "1.2.3",
+			ExpectConstr: &Constraint{
+				left: NewGuard(
+					NewVersionRaw(1, 2, 3, ""),
+					GuardGreaterOrEqual,
+				),
+				right: NewGuard(
+					NewVersionRaw(1, 2, 3, ""),
+					GuardLessOrEqual,
+				),
+				un: ConstraintUnionAnd,
+			},
+		},
+		{
+			Input: "1.2.*",
+			ExpectConstr: &Constraint{
+				left: NewGuard(
+					NewVersionRaw(1, 2, 0, ""),
+					GuardGreaterOrEqual,
+				),
+				right: NewGuard(
+					NewVersionRaw(1, 3, 0, ""),
+					GuardLessThan,
+				),
+				un: ConstraintUnionAnd,
+			},
+		},
+		{
+			Input: "1.*",
+			ExpectConstr: &Constraint{
+				left: NewGuard(
+					NewVersionRaw(1, 0, 0, ""),
+					GuardGreaterOrEqual,
+				),
+				right: NewGuard(
+					NewVersionRaw(2, 0, 0, ""),
+					GuardLessThan,
+				),
+				un: ConstraintUnionAnd,
+			},
+		},
+		{
+			Input: "*",
+			ExpectConstr: &Constraint{
+				left: NewGuard(
+					NewVersionRaw(0, 0, 0, ""),
+					GuardGreaterOrEqual,
+				),
+				right: NewGuard(
+					&Version{base: 0x3FFFFFFF + 1},
+					GuardLessThan,
+				),
+				un: ConstraintUnionAnd,
+			},
+		},
+		{
+			Input: "*.*",
+			ExpectConstr: &Constraint{
+				left: NewGuard(
+					NewVersionRaw(0, 0, 0, ""),
+					GuardGreaterOrEqual,
+				),
+				right: NewGuard(
+					&Version{base: 0x3FFFFFFF + 1},
+					GuardLessThan,
+				),
+				un: ConstraintUnionAnd,
+			},
+		},
+		{
+			Input: "*.*.*",
+			ExpectConstr: &Constraint{
+				left: NewGuard(
+					NewVersionRaw(0, 0, 0, ""),
+					GuardGreaterOrEqual,
+				),
+				right: NewGuard(
+					&Version{base: 0x3FFFFFFF + 1},
+					GuardLessThan,
+				),
+				un: ConstraintUnionAnd,
+			},
+		},
+		{
+			Input: "=1.2.3-beta.0",
+			ExpectConstr: &Constraint{
+				left: NewGuard(
+					NewVersionRaw(1, 2, 3, "beta.0"),
+					GuardGreaterOrEqual,
+				),
+				right: NewGuard(
+					NewVersionRaw(1, 2, 3, "beta.0"),
+					GuardLessOrEqual,
+				),
+				un: ConstraintUnionAnd,
+			},
+		},
+		{
+			Input: "=v1.2.3-beta.0",
+			ExpectConstr: &Constraint{
+				left: NewGuard(
+					NewVersionRaw(1, 2, 3, "beta.0"),
+					GuardGreaterOrEqual,
+				),
+				right: NewGuard(
+					NewVersionRaw(1, 2, 3, "beta.0"),
+					GuardLessOrEqual,
+				),
+				un: ConstraintUnionAnd,
+			},
+		},
+		{
+			Input: "= v1.2.3-beta.0",
+			ExpectConstr: &Constraint{
+				left: NewGuard(
+					NewVersionRaw(1, 2, 3, "beta.0"),
+					GuardGreaterOrEqual,
+				),
+				right: NewGuard(
+					NewVersionRaw(1, 2, 3, "beta.0"),
+					GuardLessOrEqual,
+				),
+				un: ConstraintUnionAnd,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.Input, func(t *testing.T) {
+			c, err := parseConstraint(tt.Input)
+			if !errorEqual(err, tt.ExpectErr) {
+				t.Fatalf("unexpected error: got: %q, want: %q", err, tt.ExpectErr)
+			}
+			if err != nil {
+				return
+			}
+			if !reflect.DeepEqual(c, tt.ExpectConstr) {
+				t.Fatalf("unexpected constraint: got: %#v, want: %#v", c, tt.ExpectConstr)
+			}
+		})
+	}
+}
+
 func BenchmarkCheck(b *testing.B) {
 	rand.Seed(time.Now().UTC().UnixNano())
 	oc, _ := masterminds.NewConstraint("^10.20.30")

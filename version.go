@@ -32,6 +32,13 @@ func NewVersion(s string) (*Version, error) {
 	}, nil
 }
 
+func NewVersionRaw(d0, d1, d2 uint32, pre string) *Version {
+	return &Version{
+		base: (d0 << 20) | (d1 << 10) | d2,
+		pre:  pre,
+	}
+}
+
 func (v Version) Major() uint32 {
 	return (v.base >> 20) & 0x3FF
 }
@@ -48,38 +55,38 @@ func (v Version) Pre() string {
 	return v.pre
 }
 
-func (v Version) NextMajor() Version {
-	return Version{
+func (v Version) NextMajor() *Version {
+	return &Version{
 		base: ((v.Major() + 1) & 0x3FF) << 20,
 	}
 }
 
-func (v Version) PreMajor() Version {
-	return Version{
+func (v Version) PreMajor() *Version {
+	return &Version{
 		base: ((v.Major() - 1) & 0x3FF) << 20,
 	}
 }
 
-func (v Version) NextMinor() Version {
-	return Version{
-		base: (v.Major() & 0x3FF00000) | (((v.Minor() + 1) & 0x3FF) << 10),
+func (v Version) NextMinor() *Version {
+	return &Version{
+		base: (v.base & 0x3FF00000) | (((v.Minor() + 1) & 0x3FF) << 10),
 	}
 }
 
-func (v Version) PrevMinor() Version {
-	return Version{
+func (v Version) PrevMinor() *Version {
+	return &Version{
 		base: (v.base & 0x3FF00000) | (((v.Minor() - 1) & 0x3FF) << 10),
 	}
 }
 
-func (v Version) NextPatch() Version {
-	return Version{
+func (v Version) NextPatch() *Version {
+	return &Version{
 		base: (v.base & 0x3FFFFC00) | ((v.Patch() + 1) & 0x3FF),
 	}
 }
 
-func (v Version) PrevPatch() Version {
-	return Version{
+func (v Version) PrevPatch() *Version {
+	return &Version{
 		base: (v.base & 0x3FFFFC00) | ((v.Patch() - 1) & 0x3FF),
 	}
 }
