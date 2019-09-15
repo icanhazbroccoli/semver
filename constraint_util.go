@@ -2,40 +2,28 @@ package semver
 
 import "fmt"
 
-type ConstraintOperator uint8
+type guardGen func([]uint32, uint8, string) (*Guard, *Guard, ConstraintUnion)
 
-const (
-	ConstraintOpTilde ConstraintOperator = iota
-	ConstraintOpTildeOrEqual
-	ConstraintOpNotEqual
-	ConstraintOpGreaterThan
-	ConstraintOpGreaterOrEqual
-	ConstraintOpLessThan
-	ConstraintOpLessOrEqual
-	ConstraintOpCaret
-)
-
-var constraintOps map[string]ConstraintOperator
+var guardGens map[string]guardGen
 
 func init() {
-	constraintOps = map[string]ConstraintOperator{
-		"":   ConstraintOpTildeOrEqual,
-		"=":  ConstraintOpTildeOrEqual,
-		"!=": ConstraintOpNotEqual,
-		">":  ConstraintOpGreaterThan,
-		">=": ConstraintOpGreaterOrEqual,
-		"=>": ConstraintOpGreaterOrEqual,
-		"<":  ConstraintOpLessThan,
-		"<=": ConstraintOpLessOrEqual,
-		"=<": ConstraintOpLessOrEqual,
-		"~":  ConstraintOpTilde,
-		"~>": ConstraintOpTilde,
-		"^":  ConstraintOpCaret,
+	guardGens = map[string]guardGen{
+		"":   genGuardTildeOrEqual,
+		"=":  genGuardTildeOrEqual,
+		"!=": genGuardNotEqual,
+		">":  genGuardGreaterThan,
+		">=": genGuardGreaterOrEqual,
+		"=>": genGuardGreaterOrEqual,
+		"<":  genGuardLessThan,
+		"<=": genGuardLessOrEqual,
+		"=<": genGuardLessOrEqual,
+		"~":  genGuardTilde,
+		"~>": genGuardTilde,
+		"^":  genGuardCaret,
 	}
 }
 
 func parseConstraint(s string) (*Constraint, error) {
-	var c *Constraint
 	var left, right *Guard
 	var un ConstraintUnion
 
@@ -47,7 +35,7 @@ func parseConstraint(s string) (*Constraint, error) {
 	var op, pre string
 
 	op, i = readOpStr(s, i)
-	if _, ok := constraintOps[op]; !ok {
+	if _, ok := guardGens[op]; !ok {
 		return nil, fmt.Errorf("unrecognised constraint operator: %q", op)
 	}
 	i = skipTrailing(s, i)
@@ -86,14 +74,9 @@ func parseConstraint(s string) (*Constraint, error) {
 		}
 	}
 
-	left, right, un = genGuards(constraintOps[op], ds, wcds, pre)
+	left, right, un = guardGens[op](ds, wcds, pre)
 
-	c = &Constraint{
-		left:  left,
-		right: right,
-		un:    un,
-	}
-	return c, nil
+	return &Constraint{left: left, right: right, un: un}, nil
 Err:
 	return nil, fmt.Errorf("failed to parse constraint %q around position %d", s, i)
 }
@@ -127,19 +110,6 @@ func expandRange(ds []uint32, wcds uint8, pre string) (*Version, *Version) {
 	default:
 		return &Version{base: 0}, &Version{base: 0x3FFFFFFF + 1}
 	}
-}
-
-type guardGen func([]uint32, uint8, string) (*Guard, *Guard, ConstraintUnion)
-
-func genGuards(op ConstraintOperator, ds []uint32, wcds uint8, pre string) (*Guard, *Guard, ConstraintUnion) {
-	var gen guardGen
-	switch op {
-	case ConstraintOpTildeOrEqual:
-		gen = genGuardTildeOrEqual
-	case ConstraintOpNotEqual:
-		gen = genGuardNotEqual
-	}
-	return gen(ds, wcds, pre)
 }
 
 func genGuardNotEqual(ds []uint32, wcds uint8, pre string) (*Guard, *Guard, ConstraintUnion) {
