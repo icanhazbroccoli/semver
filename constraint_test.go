@@ -644,6 +644,101 @@ func TestParseConstraint(t *testing.T) {
 				un:    ConstraintUnionOr,
 			},
 		},
+		{
+			Input: "~1.2.3-beta.0",
+			ExpectConstr: &Constraint{
+				left: NewGuard(
+					NewVersionRaw([]uint32{1, 2, 3}, "beta.0"),
+					GuardGreaterOrEqual,
+				),
+				right: NewGuard(
+					NewVersionRaw([]uint32{1, 3, 0}, ""),
+					GuardLessThan,
+				),
+				un: ConstraintUnionAnd,
+			},
+		},
+		{
+			Input: "~1.2.0",
+			ExpectConstr: &Constraint{
+				left: NewGuard(
+					NewVersionRaw([]uint32{1, 2, 0}, ""),
+					GuardGreaterOrEqual,
+				),
+				right: NewGuard(
+					NewVersionRaw([]uint32{1, 3, 0}, ""),
+					GuardLessThan,
+				),
+				un: ConstraintUnionAnd,
+			},
+		},
+		{
+			Input: "~>1.2.0",
+			ExpectConstr: &Constraint{
+				left: NewGuard(
+					NewVersionRaw([]uint32{1, 2, 0}, ""),
+					GuardGreaterOrEqual,
+				),
+				right: NewGuard(
+					NewVersionRaw([]uint32{1, 3, 0}, ""),
+					GuardLessThan,
+				),
+				un: ConstraintUnionAnd,
+			},
+		},
+		{
+			Input: "~1.2",
+			ExpectConstr: &Constraint{
+				left: NewGuard(
+					NewVersionRaw([]uint32{1, 2, 0}, ""),
+					GuardGreaterOrEqual,
+				),
+				right: NewGuard(
+					NewVersionRaw([]uint32{1, 3, 0}, ""),
+					GuardLessThan,
+				),
+				un: ConstraintUnionAnd,
+			},
+		},
+		{
+			Input: "~1",
+			ExpectConstr: &Constraint{
+				left: NewGuard(
+					NewVersionRaw([]uint32{1, 0, 0}, ""),
+					GuardGreaterOrEqual,
+				),
+				right: NewGuard(
+					NewVersionRaw([]uint32{2, 0, 0}, ""),
+					GuardLessThan,
+				),
+				un: ConstraintUnionAnd,
+			},
+		},
+		{
+			Input: "~>*",
+			ExpectConstr: &Constraint{
+				left: NewGuard(
+					NewVersionRaw([]uint32{0, 0, 0}, ""),
+					GuardGreaterOrEqual,
+				),
+				right: (*Guard)(nil),
+				un:    ConstraintUnionOr,
+			},
+		},
+		{
+			Input: "~>2.x.x",
+			ExpectConstr: &Constraint{
+				left: NewGuard(
+					NewVersionRaw([]uint32{2, 0, 0}, ""),
+					GuardGreaterOrEqual,
+				),
+				right: NewGuard(
+					NewVersionRaw([]uint32{3, 0, 0}, ""),
+					GuardLessThan,
+				),
+				un: ConstraintUnionAnd,
+			},
+		},
 	}
 
 	for _, tt := range tests {

@@ -154,7 +154,17 @@ func genGuardLessOrEqual(ds []uint32, wcds uint8, pre string) (*Guard, *Guard, C
 }
 
 func genGuardTilde(ds []uint32, wcds uint8, pre string) (*Guard, *Guard, ConstraintUnion) {
-	v1, v2 := expandRange(ds, wcds, pre)
+	var v1, v2 *Version
+	v1 = NewVersionRaw(ds, pre)
+	if v1.base == 0 && v1.pre == "" {
+		return NewGuard(v1, GuardGreaterOrEqual), nil, ConstraintUnionOr
+	}
+	switch wcds {
+	case 0, 1:
+		v2 = v1.NextMinor()
+	default:
+		v2 = v1.NextMajor()
+	}
 	return NewGuard(v1, GuardGreaterOrEqual), NewGuard(v2, GuardLessThan), ConstraintUnionAnd
 }
 
