@@ -171,19 +171,23 @@ func genGuardTilde(ds []uint32, wcds uint8, pre string) (*Guard, *Guard, Constra
 func genGuardCaret(ds []uint32, wcds uint8, pre string) (*Guard, *Guard, ConstraintUnion) {
 	var v1, v2 *Version
 	v1 = NewVersionRaw(ds, pre)
-	if wcds >= 4 { // >= 0b100
-		v2 = &Version{base: 0x3FFFFFFF + 1}
-	} else if v1.Major() > 0 {
-		v2 = v1.NextMajor()
-	} else {
-		switch len(ds) {
-		case 3:
+
+	switch {
+	case wcds >= 4:
+		return NewGuard(v1, GuardGreaterOrEqual), nil, ConstraintUnionOr
+	case (v1.base & 0x3FFFFC00) == 0:
+		switch wcds {
+		case 0:
 			v2 = v1.NextPatch()
-		case 2:
+		case 1:
 			v2 = v1.NextMinor()
 		default:
 			v2 = v1.NextMajor()
 		}
+	case (v1.base & 0x3FF00000) == 0:
+		v2 = v1.NextMinor()
+	default:
+		v2 = v1.NextMajor()
 	}
 
 	return NewGuard(v1, GuardGreaterOrEqual), NewGuard(v2, GuardLessThan), ConstraintUnionAnd
