@@ -43,13 +43,13 @@ There are several SemVer operators:
 |  `>`   |`>1.2.3` |`>1.2.3`           |Trivial non-inclusive range|
 |        |`>1.2`   |`>=1.3.0`          |1.2s is between 1.2.0(incl) and 1.3.0(excl). It's 1.3.0(incl) to the right from this range|
 |        |`>1`     |`>=2.0.0`          |1s is even a bigger range: it expands to the next major version|
-|  `>=`  |`>=1.2.3`|`>=1.2.3`          |Trivial inclusive range|
+|`>=`,`=<`|`>=1.2.3`|`>=1.2.3`          |Trivial inclusive range|
 |        |`>=1.2`  |`>=1.2.0`          |This time range between 1.2.0 and 1.3.0 is included and expands in a single-ended range|
 |        |`>=0`    |`>=0.0.0`          |Any version satisfies this constraint|
 |  `<`   |`<1.2.3` |`<1.2.3`           |Trivial non-inclusive range|
 |        |`<1.2`   |`<1.2.0`           |A ranged version expands in a trivial non-inclusive range|
 |        |`<0`     |`<0.0.0`           |No version satisifies this constraint, oppsoite to `>=0.0.0`|
-|  `<=`  |`<=1.2.3`|`<=1.2.3`          |Trivial inclusive range|
+|`<=`,`=<`|`<=1.2.3`|`<=1.2.3`          |Trivial inclusive range|
 |`~`,`~>`|`~1.2.3` |`>=1.2.3, <1.3.0`  |When either a minor version and a patch or just a minor version specified, tilde expands to the next minor release|
 |        |`~1.2`   |`>=1.2.0, <1.3.0`  |           |
 |        |`~1`     |`>=1.0.0, <2.0.0`  |If only a major specified, tilde expands to the next major|
