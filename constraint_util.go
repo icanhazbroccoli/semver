@@ -131,13 +131,16 @@ func genGuardTildeOrEqual(ds []uint32, wcds uint8, pre string) (*Guard, *Guard, 
 }
 
 func genGuardGreaterThan(ds []uint32, wcds uint8, pre string) (*Guard, *Guard, ConstraintUnion) {
-	_, v2 := expandRange(ds, wcds, pre)
-	return NewGuard(v2, GuardGreaterThan), nil, ConstraintUnionOr
+	v1, v2 := expandRange(ds, wcds, pre)
+	if v1 == v2 {
+		return NewGuard(v2, GuardGreaterThan), nil, ConstraintUnionOr
+	}
+	return NewGuard(v2, GuardGreaterOrEqual), nil, ConstraintUnionOr
 }
 
 func genGuardGreaterOrEqual(ds []uint32, wcds uint8, pre string) (*Guard, *Guard, ConstraintUnion) {
-	_, v2 := expandRange(ds, wcds, pre)
-	return NewGuard(v2, GuardGreaterOrEqual), nil, ConstraintUnionOr
+	v1, _ := expandRange(ds, wcds, pre)
+	return NewGuard(v1, GuardGreaterOrEqual), nil, ConstraintUnionOr
 }
 
 func genGuardLessThan(ds []uint32, wcds uint8, pre string) (*Guard, *Guard, ConstraintUnion) {

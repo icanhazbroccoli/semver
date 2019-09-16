@@ -479,6 +479,138 @@ func TestParseConstraint(t *testing.T) {
 				un: ConstraintUnionOr,
 			},
 		},
+		{
+			Input: ">1.2.3-beta.0",
+			ExpectConstr: &Constraint{
+				left: NewGuard(
+					NewVersionRaw([]uint32{1, 2, 3}, "beta.0"),
+					GuardGreaterThan,
+				),
+				right: (*Guard)(nil),
+				un:    ConstraintUnionOr,
+			},
+		},
+		{
+			Input: ">1.2.3",
+			ExpectConstr: &Constraint{
+				left: NewGuard(
+					NewVersionRaw([]uint32{1, 2, 3}, ""),
+					GuardGreaterThan,
+				),
+				right: (*Guard)(nil),
+				un:    ConstraintUnionOr,
+			},
+		},
+		{
+			Input: ">1.2",
+			ExpectConstr: &Constraint{
+				left: NewGuard(
+					NewVersionRaw([]uint32{1, 3, 0}, ""),
+					GuardGreaterOrEqual,
+				),
+				right: (*Guard)(nil),
+				un:    ConstraintUnionOr,
+			},
+		},
+		{
+			Input: ">1",
+			ExpectConstr: &Constraint{
+				left: NewGuard(
+					NewVersionRaw([]uint32{2, 0, 0}, ""),
+					GuardGreaterOrEqual,
+				),
+				right: (*Guard)(nil),
+				un:    ConstraintUnionOr,
+			},
+		},
+		{
+			Input: ">=1.2.3-beta.0",
+			ExpectConstr: &Constraint{
+				left: NewGuard(
+					NewVersionRaw([]uint32{1, 2, 3}, "beta.0"),
+					GuardGreaterOrEqual,
+				),
+				right: (*Guard)(nil),
+				un:    ConstraintUnionOr,
+			},
+		},
+		{
+			Input: ">=1.2.3",
+			ExpectConstr: &Constraint{
+				left: NewGuard(
+					NewVersionRaw([]uint32{1, 2, 3}, ""),
+					GuardGreaterOrEqual,
+				),
+				right: (*Guard)(nil),
+				un:    ConstraintUnionOr,
+			},
+		},
+		{
+			Input: ">=1.2",
+			ExpectConstr: &Constraint{
+				left: NewGuard(
+					NewVersionRaw([]uint32{1, 2, 0}, ""),
+					GuardGreaterOrEqual,
+				),
+				right: (*Guard)(nil),
+				un:    ConstraintUnionOr,
+			},
+		},
+		{
+			Input: ">=1",
+			ExpectConstr: &Constraint{
+				left: NewGuard(
+					NewVersionRaw([]uint32{1, 0, 0}, ""),
+					GuardGreaterOrEqual,
+				),
+				right: (*Guard)(nil),
+				un:    ConstraintUnionOr,
+			},
+		},
+		{
+			Input: "<1.2.3-beta.0",
+			ExpectConstr: &Constraint{
+				left: NewGuard(
+					NewVersionRaw([]uint32{1, 2, 3}, "beta.0"),
+					GuardLessThan,
+				),
+				right: (*Guard)(nil),
+				un:    ConstraintUnionOr,
+			},
+		},
+		{
+			Input: "<1.2.3",
+			ExpectConstr: &Constraint{
+				left: NewGuard(
+					NewVersionRaw([]uint32{1, 2, 3}, ""),
+					GuardLessThan,
+				),
+				right: (*Guard)(nil),
+				un:    ConstraintUnionOr,
+			},
+		},
+		{
+			Input: "<1.2",
+			ExpectConstr: &Constraint{
+				left: NewGuard(
+					NewVersionRaw([]uint32{1, 2, 0}, ""),
+					GuardLessThan,
+				),
+				right: (*Guard)(nil),
+				un:    ConstraintUnionOr,
+			},
+		},
+		{
+			Input: "<1",
+			ExpectConstr: &Constraint{
+				left: NewGuard(
+					NewVersionRaw([]uint32{1, 0, 0}, ""),
+					GuardLessThan,
+				),
+				right: (*Guard)(nil),
+				un:    ConstraintUnionOr,
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -505,7 +637,7 @@ func BenchmarkCheck(b *testing.B) {
 		right: NewGuard(newVersionUnsafe("11.0.0"), GuardLessThan),
 		un:    ConstraintUnionAnd,
 	}
-	nVersions := 10000000
+	nVersions := 10000
 	type VerRes struct {
 		Ver string
 		Res bool
