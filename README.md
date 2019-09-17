@@ -1,6 +1,6 @@
 # SemVer
 
-SemVer is a library for a fast version match checking written in Golang. Can be used by package managers and other dependency-fetching clients dealing with semantic versioning where performance matters. The library works 5-7 times faster than similar known Golang implementations.
+SemVer is a library for a fast version match checking written in Golang. Can be used by package managers and other dependency-fetching clients dealing with semantic versioning where performance matters. The library works several times faster than similar known Golang implementations (see Benchmarks section).
 
 ## Usage
 
@@ -19,6 +19,40 @@ if c.Check(v) {
 ```
 
 The library operates with 2 primitives: versions and constraints. A version defines a specific identifier, e.g.: `v1.0.1-beta.0`. A constraint defined an acceptable range of versions, e.g.: `~>1.0.1` means: `>=1.0.1 and < 1.1.0`. The library implements a fast checker for testing whether a given version belongs to the constraint-defined range.
+
+## Benchmarks
+
+In the benchmarks the library performance is compared against [Masterminds/semver](https://github.com/Masterminds/semver). This library is a very comprehensive tool to operate with SemVer constraints and versions.
+
+The CPU is:
+```
+Model: Intel(R) Core(TM) i7-8650U CPU @ 1.90GHz
+# of cores: 8
+Cache size: 8192 KB
+Enabled flags: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx pdpe1gb rdtscp lm constant_tsc art arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc cpuid aperfmperf tsc_known_freq pni pclmulqdq dtes64 monitor ds_cpl vmx smx est tm2 ssse3 sdbg fma cx16 xtpr pdcm pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand lahf_lm abm 3dnowprefetch cpuid_fault epb invpcid_single pti ssbd ibrs ibpb stibp tpr_shadow vnmi flexpriority ept vpid fsgsbase tsc_adjust bmi1 hle avx2 smep bmi2 erms invpcid rtm mpx rdseed adx smap clflushopt intel_pt xsaveopt xsavec xgetbv1 xsaves dtherm ida arat pln pts hwp hwp_notify hwp_act_window hwp_epp md_clear flush_l1d
+```
+
+Results:
+```
+goos: linux
+goarch: amd64
+pkg: sandbox/semver
+BenchmarkStaticConstraintParseAndCheckCheck/icanhazbroccoli-8            4695884               348 ns/op
+BenchmarkStaticConstraintParseAndCheckCheck/masterminds-8                 405423              3313 ns/op
+BenchmarkParseConstraintOnCheck/icanhazbroccoli-8                         770362              2106 ns/op
+BenchmarkParseConstraintOnCheck/masterminds-8                              84526             13316 ns/op
+BenchmarkSimpleCompare/icanhazbroccoli-8                                 9843217               112 ns/op
+BenchmarkSimpleCompare/masterminds-8                                     5460199               187 ns/op
+```
+
+In the first pair of tests a caret constraint was compiled once and compared
+against 10k versions parsed on every iteration.
+
+In the second test we parsed caret constraint and a version on every check 10k
+times.
+
+In the third benchmark we pre-compiled versions and the caret constraint and
+benchmarked pure Check() call.
 
 ## Understanding SemVer constraints
 
